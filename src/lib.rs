@@ -1,9 +1,12 @@
+pub mod js; 
+pub use js as _js;
 use std::cell::Cell;
 use std::rc::Rc;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
 pub fn start() -> Result<(), JsValue> {
+    _js::alert("Note whatever you draw in the canvas will be lost");
     let document = web_sys::window().unwrap().document().unwrap();
     let canvas = document
         .create_element("canvas")?
@@ -52,6 +55,9 @@ pub fn start() -> Result<(), JsValue> {
         canvas.add_event_listener_with_callback("mouseup", closure.as_ref().unchecked_ref())?;
         closure.forget();
     }
+    let val = document.create_element("p")?;
+    val.set_text_content(Some("Keep moving around with the cursor"));
+
 
     Ok(())
 }
