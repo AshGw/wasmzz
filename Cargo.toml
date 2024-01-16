@@ -1,0 +1,31 @@
+[package]
+name = "wasmzz"
+version = "0.1.0"
+authors = ["ashgw <ashrefgw@proton.me>"]
+description = "..."
+license = "MIT/Apache-2.0"
+repository = "https://github.com/ashgw/wasmzz"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+js-sys = "0.3.67"
+wasm-bindgen = "0.2"
+
+
+[dependencies.web-sys]
+version = "0.3.4"
+features = [
+  'CanvasRenderingContext2d',
+  'CssStyleDeclaration',
+  'Document',
+  'Element',
+  'EventTarget',
+  'HtmlCanvasElement',
+  'HtmlElement',
+  'MouseEvent',
+  'Node',
+  'Window',
+]
