@@ -1,33 +1,22 @@
 use wasm_bindgen::prelude::*;
-use web_sys::{AudioContext, OscillatorType};
+use web_sys::{AudioContext, OscillatorType, GainNode, OscillatorNode};
 
-/// Converts a midi note to frequency
-///
-/// A midi note is an integer, generally in the range of 21 to 108
-pub fn midi_to_freq(note: u8) -> f32 {
-    27.5 * 2f32.powf((note as f32 - 21.0) / 12.0)
-}
 
 #[wasm_bindgen]
 pub struct FmOsc {
     ctx: AudioContext,
     /// The primary oscillator.  This will be the fundamental frequency
-    primary: web_sys::OscillatorNode,
-
-    /// Overall gain (volume) control
-    gain: web_sys::GainNode,
-
+    primary: OscillatorNode,
+    ///  modulates the primary oscillator's frequency
+    fm_osc: OscillatorNode,
+    /// volume control
+    gain: GainNode,
     /// Amount of frequency modulation
-    fm_gain: web_sys::GainNode,
-
-    /// The oscillator that will modulate the primary oscillator's frequency
-    fm_osc: web_sys::OscillatorNode,
-
+    fm_gain: GainNode,
     /// The ratio between the primary frequency and the fm_osc frequency.
     ///
     /// Generally fractional values like 1/2 or 1/4 sound best
     fm_freq_ratio: f32,
-
     fm_gain_ratio: f32,
 }
 
@@ -35,7 +24,7 @@ impl Drop for FmOsc {
     fn drop(&mut self) {
         let _ = self.ctx.close();
     }
-}
+} 
 
 #[wasm_bindgen]
 impl FmOsc {
@@ -54,25 +43,12 @@ impl FmOsc {
         primary.frequency().set_value(440.0); // A4 note
         gain.gain().set_value(0.0); // starts muted
         fm_gain.gain().set_value(0.0); // no initial frequency modulation
+
         fm_osc.set_type(OscillatorType::Sine);
         fm_osc.frequency().set_value(0.0);
-
-        // Connect the nodes up!
-
-        // The primary oscillator is routed through the gain node, so that
-        // it can control the overall output volume.
         primary.connect_with_audio_node(&gain)?;
-
-        // Then connect the gain node to the AudioContext destination (aka
-        // your speakers).
         gain.connect_with_audio_node(&ctx.destination())?;
-
-        // The FM oscillator is connected to its own gain node, so it can
-        // control the amount of modulation.
         fm_osc.connect_with_audio_node(&fm_gain)?;
-
-        // Connect the FM oscillator to the frequency parameter of the main
-        // oscillator, so that the FM node can modulate its frequency.
         fm_gain.connect_with_audio_param(&primary.frequency())?;
 
         // Start the oscillators!
@@ -105,18 +81,21 @@ impl FmOsc {
     #[wasm_bindgen]
     pub fn set_primary_frequency(&self, freq: f32) {
         self.primary.frequency().set_value(freq);
-
-        // The frequency of the FM oscillator depends on the frequency of the
-        // primary oscillator, so we update the frequency of both in this method.
         self.fm_osc.frequency().set_value(self.fm_freq_ratio * freq);
         self.fm_gain.gain().set_value(self.fm_gain_ratio * freq);
     }
 
+    /// Converts a midi note to frequency
+    fn mid_to_f(note: u8) -> f32 {
+        27.5 * 2f32.powf((note as f32 - 21.0) / 12.0)
+    }
+
     #[wasm_bindgen]
     pub fn set_note(&self, note: u8) {
-        let freq = midi_to_freq(note);
+        let freq = FmOsc::mid_to_f(note);
         self.set_primary_frequency(freq);
     }
+
 
     /// This should be between 0 and 1, though higher values are accepted.
     #[wasm_bindgen]
