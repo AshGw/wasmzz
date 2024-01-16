@@ -1,6 +1,6 @@
 import * as wasm from "wasmzz";
 try {
-   wasm.start();
+   wasm.canvas();
 } catch (error) {
   console.error(error);
 }
